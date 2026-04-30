@@ -1,4 +1,10 @@
 # VeriYapilari_DOM_Parser_Projesi
+1) 032490002 — Tokenizer & Lexical Analysis (Backend Foundation)
+
+Bu projenin temel veri akışını başlatan ve ham HTML metnini yapılandırılmış bir token dizisine dönüştüren Lexical Analysis (Sözcük Analizi) süreci tarafımdan üstlenilmiştir. Projenin en kritik aşaması olan bu katman, karmaşık string verilerini diğer modüllerin (Tree Builder, Hash Table) işleyebileceği anlamlı birimlere ayırmaktadır.
+Öznitelik Ayıklama (Attribute Parsing): Etiket içerisindeki id ve class gibi nitelikleri yakalamak için optimize edilmiş Regex (Düzenli İfadeler) yapıları kullanılmış; bu veriler 3. kişinin (Hash Table) doğrudan erişebilmesi için Dictionary<string, string> yapısında saklanmıştır.  
+Veri Modelleri: Projenin iskeletini oluşturan Token sınıfı ve TokenType enum yapıları kurgulanarak, tüm backend mimarisinin üzerinde yükseleceği veri kontratları tanımlanmıştır.  
+Web API Entegrasyonu: Frontend ile Backend arasındaki iletişimi sağlamak amacıyla ASP.NET Core Web API üzerinde bir endpoint (/api/parser/tokenize) oluşturulmuş ve CORS politikaları yapılandırılarak sistemin tam entegre çalışması sağlanmıştır.
 2)032490001_ HTML to DOM Tree Parser
 Bu proje, C# (.NET Core) üzerinde hazır standart kütüphaneler kesinlikle kullanılmadan sıfırdan geliştirilen N-ary Tree, Stack, Queue ve Hash Table gibi özel veri yapılarıyla ham HTML metnini bellekte hiyerarşik bir DOM ağacına dönüştürmeyi amaçlamaktadır. Düzenli ifadeler yerine temel string manipülasyonu ile etiketleri ayrıştıran sistem, yığıt tabanlı O(N) zaman karmaşıklığına sahip bir algoritma sayesinde açılış ve kapanış etiketlerini doğru ebeveyn-çocuk ilişkileriyle eşleştirerek modeli inşa eder. Nesne yönelimli programlama prensipleriyle tasarlanan bu mimari; doğrudan ana dala kod gönderiminin engellendiği, Pull Request (PR) mekanizmasının zorunlu tutulduğu profesyonel bir Git iş akışıyla yönetilmekte ve kod içi isimlendirmelerde Türkçe karakter kullanılmaması kuralına katı bir şekilde bağlı kalmaktadır.
 3)032390103_ hashtable
