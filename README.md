@@ -1,4 +1,6 @@
-# veri-yap-lar-projesi
+# VeriYapilari_DOM_Parser_Projesi
+032390103_ hashtable
+Bu projenin temelini, HTML metnini ayrıştırarak hiyerarşik bir düzende saklayan N-ary Tree (Çoklu Ağaç) yapısı ve bu yapı üzerindeki arama işlemlerini optimize eden Hash Table (Karma Tablo) veri yapısı oluşturmaktadır. Implemente edilen HashTable sınıfı, DOM elemanlarına id niteliği üzerinden O(1) zaman karmaşıklığıyla (ortalama durumda) erişim sağlayarak getElementById fonksiyonunun performansını en üst düzeye çıkarırken, olası çakışmaları Chaining (Bağlı Liste) yöntemiyle yönetmektedir. HTML ayrıştırma (parsing) sürecinde etiketlerin iç içe geçme sırasını ve derinliğini kontrol etmek için bir Stack (Yığın) yapısından yararlanılırken; sınıf bazlı aramalar ve ağaç üzerindeki seviye bazlı taramalar için Queue (Kuyruk) destekli BFS (Genişlik Öncelikli Arama) algoritması kullanılmaktadır. Bu mimari, hem bellek yönetimini hiyerarşik bir düzende tutmakta hem de veri setleri büyüdüğünde bile belirli elemanlara hızlı erişim ve analiz imkanı sunarak projenin teknik gereksinimlerini karşılamaktadır.
 032390143_Front
 DOM Ağacı Görselleştirici (DOM Tree Visualizer)
 Bu proje, HTML kaynak kodunu analiz eden ve bu kodu etkileşimli, hiyerarşik bir ağaç yapısına (N-ary Tree) dönüştüren modern bir web aracıdır. "Cyberpunk" temalı karanlık bir arayüze ve yüksek performanslı algoritmalara sahiptir.
