@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DOM Tree Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0a0c10;
+    --bg2:      #0f1117;
+    --bg3:      #161b24;
+    --bg4:      #1e2535;
+    --border:   #232b3a;
+    --border2:  #2e3a50;
+    --text:     #cdd6f4;
+    --text2:    #7a8aa8;
+    --text3:    #4a5568;
+    --accent:   #5ddcff;
+    --accent2:  #74c7ec;
+    --green:    #a6e3a1;
+    --amber:    #f9e2af;
+    --coral:    #fab387;
+    --pink:     #f38ba8;
+    --lavender: #b4befe;
+    --tag:      #89dceb;
+    --glow:     0 0 20px rgba(93,220,255,0.15);
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; overflow: hidden; }
+
+  /* ---- SCANLINE OVERLAY ---- */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  }
+
+  /* ---- LAYOUT ---- */
+  #app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ---- TOP BAR ---- */
+  #topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+  #logo {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px;
+    color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+  #logo::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent); display: block;
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity:1; transform: scale(1); } 50% { opacity:0.5; transform: scale(0.8); } }
+
+  #topbar-mid { flex: 1; display: flex; align-items: center; gap: 10px; }
+
+  #search-wrap {
+    flex: 1; max-width: 360px; position: relative;
+    display: flex; align-items: center;
+  }
+  #search-icon {
+    position: absolute; left: 10px; font-size: 11px; color: var(--text3); pointer-events: none;
+  }
+  #search-input {
+    width: 100%; padding: 7px 12px 7px 30px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,220,255,0.08); }
+  #search-input::placeholder { color: var(--text3); }
+
+  #search-badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 20px;
+    background: var(--bg4); border: 1px solid var(--border2);
+    color: var(--text2); font-family: 'JetBrains Mono', monospace;
+    min-width: 60px; text-align: center; transition: all 0.2s;
+  }
+  #search-badge.found { background: rgba(166,227,161,0.12); border-color: var(--green); color: var(--green); }
+  #search-badge.not-found { background: rgba(243,139,168,0.12); border-color: var(--pink); color: var(--pink); }
+
+  #parse-btn {
+    padding: 7px 18px; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--accent);
+    color: var(--accent); border-radius: 6px; cursor: pointer;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  #parse-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--accent); opacity: 0; transition: opacity 0.2s;
+  }
+  #parse-btn:hover::before { opacity: 0.1; }
+  #parse-btn:hover { box-shadow: var(--glow); }
+  #parse-btn:active { transform: scale(0.97); }
+
+  #stats-row { display: flex; gap: 16px; margin-left: auto; }
+  .stat-chip {
+    font-size: 10px; color: var(--text3); display: flex; align-items: center; gap: 5px;
+  }
+  .stat-val { color: var(--text2); font-weight: 500; }
+
+  /* ---- MAIN PANELS ---- */
+  #panels { display: flex; flex: 1; overflow: hidden; }
+
+  /* ---- LEFT PANEL ---- */
+  #left { width: 46%; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+
+  .panel-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); flex-shrink: 0;
+  }
+  .panel-title { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); }
+  .ph-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .dot-blue { background: var(--accent); }
+  .dot-green { background: var(--green); }
+
+  .shortcut-hint { margin-left: auto; font-size: 10px; color: var(--text3); }
+  kbd {
+    display: inline-block; padding: 1px 5px; background: var(--bg4);
+    border: 1px solid var(--border2); border-radius: 3px; font-size: 9px;
+    font-family: 'JetBrains Mono', monospace; color: var(--text3);
+  }
+
+  #html-input {
+    flex: 1; padding: 16px; font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; line-height: 1.7; background: var(--bg);
+    color: var(--text); border: none; outline: none; resize: none;
+    tab-size: 2; caret-color: var(--accent);
+  }
+  #html-input::-webkit-scrollbar { width: 6px; }
+  #html-input::-webkit-scrollbar-track { background: transparent; }
+  #html-input::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ---- RIGHT PANEL ---- */
+  #right { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+
+  #tree-actions {
+    display: flex; gap: 6px; padding: 0 16px; margin-left: auto; align-items: center;
+  }
+  .action-btn {
+    font-size: 10px; padding: 3px 10px; background: var(--bg4);
+    border: 1px solid var(--border2); border-radius: 4px;
+    color: var(--text2); cursor: pointer; font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  #tree-scroll { flex: 1; overflow: auto; padding: 12px 8px 20px; }
+  #tree-scroll::-webkit-scrollbar { width: 6px; }
+  #tree-scroll::-webkit-scrollbar-track { background: transparent; }
+  #tree-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ---- TREE NODES ---- */
+  .tn { position: relative; }
+
+  .nr {
+    display: flex; align-items: center; gap: 0;
+    padding: 2px 6px 2px 4px; border-radius: 5px;
+    cursor: pointer; transition: background 0.12s; position: relative;
+    min-height: 24px;
+  }
+  .nr:hover { background: var(--bg3); }
+  .nr.hl { background: rgba(249,226,175,0.08) !important; }
+  .nr.hl::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; background: var(--amber); border-radius: 2px 0 0 2px;
+  }
+
+  .tog {
+    width: 18px; height: 18px; display: inline-flex; align-items: center;
+    justify-content: center; font-size: 8px; color: var(--text3);
+    flex-shrink: 0; transition: transform 0.15s; user-select: none;
+  }
+  .tog.open { transform: rotate(0deg); }
+  .tog.closed { transform: rotate(-90deg); }
+
+  .tn-tag { font-size: 12px; color: var(--tag); font-weight: 500; }
+  .tn-bracket { font-size: 12px; color: var(--text3); }
+  .tn-id { font-size: 11px; color: var(--green); }
+  .tn-class { font-size: 11px; color: var(--coral); }
+  .tn-attr { font-size: 11px; color: var(--text3); }
+  .tn-depth { font-size: 9px; color: var(--border2); margin-left: 6px; }
+
+  .text-leaf {
+    font-size: 11px; color: var(--text3); padding: 1px 4px;
+    font-style: italic; display: flex; align-items: center; gap: 6px;
+  }
+  .tl-quote { color: var(--lavender); }
+
+  .children {
+    padding-left: 20px; border-left: 1px solid var(--border); margin-left: 8px;
+    transition: all 0.15s;
+  }
+
+  /* ---- EMPTY STATE ---- */
+  #empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; gap: 12px; padding: 40px;
+  }
+  .empty-ascii {
+    font-size: 11px; color: var(--border2); line-height: 1.4; text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .empty-label { font-size: 12px; color: var(--text3); }
+
+  /* ---- STATUS BAR ---- */
+  #statusbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 5px 16px; border-top: 1px solid var(--border);
+    background: var(--bg2); flex-shrink: 0; font-size: 10px; color: var(--text3);
+  }
+  .sb-item { display: flex; align-items: center; gap: 5px; }
+  .sb-dot { width: 5px; height: 5px; border-radius: 50%; }
+  #status-msg { margin-left: auto; color: var(--text3); }
+
+  /* ---- PANEL HEAD SHARED ---- */
+  #left .panel-head { justify-content: flex-start; }
+  #right .panel-head { justify-content: flex-start; }
+
+  /* ---- ANIMATIONS ---- */
+  @keyframes fadeIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
+  .tn { animation: fadeIn 0.2s ease both; }
+
+  /* ---- NODE TOOLTIP DEPTH INDICATOR ---- */
+  .depth-bar {
+    display: inline-block; width: 3px; border-radius: 2px;
+    background: var(--accent); opacity: 0.25; margin-right: 3px; flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div id="logo">DOM Visualizer</div>
+    <div id="topbar-mid">
+      <div id="search-wrap">
+        <span id="search-icon">⌕</span>
+        <input id="search-input" placeholder='id="header"  or  class="nav"  or  tag name' />
+      </div>
+      <div id="search-badge">ready</div>
+      <button id="parse-btn">▶ Parse</button>
+    </div>
+    <div id="stats-row">
+      <div class="stat-chip">nodes <span class="stat-val" id="stat-nodes">—</span></div>
+      <div class="stat-chip">depth <span class="stat-val" id="stat-depth">—</span></div>
+      <div class="stat-chip">ids <span class="stat-val" id="stat-ids">—</span></div>
+    </div>
+  </div>
+
+  <!-- PANELS -->
+  <div id="panels">
+
+    <!-- LEFT: HTML INPUT -->
+    <div id="left">
+      <div class="panel-head">
+        <span class="ph-dot dot-blue"></span>
+        <span class="panel-title">HTML Source</span>
+        <span class="shortcut-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to parse</span>
+      </div>
+      <textarea id="html-input" spellcheck="false"><html>
+  <head>
+    <title>My Page</title>
+    <meta charset="UTF-8" />
+  </head>
+  <body id="main" class="dark-theme">
+    <header id="site-header" class="nav">
+      <h1 id="logo">Brand</h1>
+      <nav class="nav">
+        <a href="#" class="nav-link">Home</a>
+        <a href="#" class="nav-link active">About</a>
+        <a href="#" class="nav-link">Contact</a>
+      </nav>
+    </header>
+    <main id="content">
+      <section class="hero">
+        <h2 id="headline">Welcome Back</h2>
+        <p class="lead">Build something amazing.</p>
+        <button id="cta" class="btn btn-primary">Get Started</button>
+      </section>
+      <div class="container">
+        <article id="post-1" class="card">
+          <h3>First Post</h3>
+          <p class="excerpt">Short description here.</p>
+          <span class="tag">Featured</span>
+        </article>
+        <article id="post-2" class="card">
+          <h3>Second Post</h3>
+          <p class="excerpt">Another description.</p>
+        </article>
+      </div>
+    </main>
+    <footer id="site-footer" class="footer">
+      <p>© 2025 My Site</p>
+    </footer>
+  </body>
+</html></textarea>
+    </div>
+
+    <!-- RIGHT: TREE -->
+    <div id="right">
+      <div class="panel-head" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="ph-dot dot-green"></span>
+          <span class="panel-title">DOM Tree</span>
+        </div>
+        <div id="tree-actions">
+          <button class="action-btn" id="expand-all">expand all</button>
+          <button class="action-btn" id="collapse-all">collapse all</button>
+        </div>
+      </div>
+      <div id="tree-scroll">
+        <div id="empty">
+          <div class="empty-ascii">
+&lt;?&gt;<br>
+ ├── ...<br>
+ │    └── ...<br>
+ └── ...
+          </div>
+          <div class="empty-label">click Parse to build the tree</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <div class="sb-item"><span class="sb-dot" style="background:var(--accent);box-shadow:0 0 6px var(--accent);"></span>Veri Yapıları — DOM Visualizer</div>
+    <div class="sb-item"><span class="sb-dot" style="background:var(--green);"></span>N-ary Tree + Stack Parser</div>
+    <div class="sb-item"><span class="sb-dot" style="background:var(--coral);"></span>Hash Table (id index) + BFS Search</div>
+    <div id="status-msg">ready</div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+
+  // ─── TOKENIZER ───────────────────────────────────────────────
+  function tokenize(html) {
+    const tokens = [];
+    let i = 0;
+    while (i < html.length) {
+      if (html[i] === '<') {
+        let j = html.indexOf('>', i);
+        if (j === -1) break;
+        const raw = html.slice(i + 1, j).trim();
+        if (raw.startsWith('!') || raw.startsWith('?')) { i = j + 1; continue; }
+        if (raw.startsWith('/')) {
+          tokens.push({ type: 'close', tag: raw.slice(1).trim().split(/\s/)[0].toLowerCase() });
+        } else {
+          const sc = raw.endsWith('/');
+          const content = sc ? raw.slice(0, -1).trim() : raw;
+          const sp = content.search(/[\s]/);
+          let tagName = sp === -1 ? content.toLowerCase() : content.slice(0, sp).toLowerCase();
+          let attrStr = sp === -1 ? '' : content.slice(sp + 1);
+          const attrs = parseAttrs(attrStr);
+          const VOID = new Set(['br','hr','img','input','link','meta','area','base','col','embed','param','source','track','wbr']);
+          const isVoid = sc || VOID.has(tagName);
+          tokens.push({ type: 'open', tag: tagName, attrs, selfClose: isVoid });
+          if (isVoid) tokens.push({ type: 'close', tag: tagName });
+        }
+        i = j + 1;
+      } else {
+        let j = html.indexOf('<', i);
+        if (j === -1) j = html.length;
+        const text = html.slice(i, j).replace(/\s+/g, ' ').trim();
+        if (text) tokens.push({ type: 'text', text });
+        i = j;
+      }
+    }
+    return tokens;
+  }
+
+  function parseAttrs(str) {
+    const attrs = {};
+    const re = /([\w-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+)))?/g;
+    let m;
+    while ((m = re.exec(str)) !== null) {
+      attrs[m[1]] = m[2] ?? m[3] ?? m[4] ?? '';
+    }
+    return attrs;
+  }
+
+  // ─── TREE BUILDER (Stack-based) ───────────────────────────────
+  let idIndex = {}; // Hash Table: id → node
+  let nodeCount = 0;
+  let maxDepth = 0;
+
+  function buildTree(tokens) {
+    idIndex = {};
+    nodeCount = 0;
+    maxDepth = 0;
+    const root = { tag: '#root', attrs: {}, children: [], depth: 0 };
+    const stack = [root];
+
+    for (const tok of tokens) {
+      const top = stack[stack.length - 1];
+      if (tok.type === 'open') {
+        const node = { tag: tok.tag, attrs: tok.attrs, children: [], parent: top, depth: stack.length - 1 };
+        nodeCount++;
+        if (node.depth > maxDepth) maxDepth = node.depth;
+        if (tok.attrs.id) idIndex[tok.attrs.id] = node;
+        top.children.push(node);
+        if (!tok.selfClose) stack.push(node);
+      } else if (tok.type === 'close') {
+        for (let k = stack.length - 1; k >= 1; k--) {
+          if (stack[k].tag === tok.tag) { stack.splice(k, 1); break; }
+        }
+      } else if (tok.type === 'text') {
+        top.children.push({ tag: '#text', text: tok.text, children: [], parent: top, depth: stack.length - 1 });
+      }
+    }
+    return root;
+  }
+
+  // ─── RENDER ───────────────────────────────────────────────────
+  let allRows = [];
+
+  function renderTree(node) {
+    allRows = [];
+    if (node.children.length === 0) return null;
+    const frag = document.createDocumentFragment();
+    for (const ch of node.children) frag.appendChild(renderNode(ch));
+    return frag;
+  }
+
+  function renderNode(node) {
+    if (node.tag === '#text') {
+      const d = document.createElement('div');
+      d.className = 'text-leaf';
+      d.style.paddingLeft = (node.depth * 20 + 22) + 'px';
+      const q1 = document.createElement('span'); q1.className = 'tl-quote'; q1.textContent = '"';
+      const tx = document.createElement('span'); tx.textContent = node.text.slice(0, 80) + (node.text.length > 80 ? '…' : '');
+      const q2 = document.createElement('span'); q2.className = 'tl-quote'; q2.textContent = '"';
+      d.append(q1, tx, q2);
+      return d;
+    }
+
+    const wrap = document.createElement('div');
+    wrap.className = 'tn';
+    wrap.style.animationDelay = (allRows.length * 12) + 'ms';
+
+    const row = document.createElement('div');
+    row.className = 'nr';
+    row.style.paddingLeft = (node.depth * 20) + 'px';
+    row.dataset.id = node.attrs.id || '';
+    row.dataset.class = node.attrs.class || '';
+    row.dataset.tag = node.tag;
+    allRows.push(row);
+
+    // depth bar
+    if (node.depth > 0) {
+      const bar = document.createElement('span');
+      bar.className = 'depth-bar';
+      bar.style.height = (Math.min(node.depth * 3, 14)) + 'px';
+      bar.style.opacity = Math.min(0.08 * node.depth + 0.1, 0.5);
+      row.appendChild(bar);
+    }
+
+    const hasKids = node.children.length > 0;
+    const tog = document.createElement('span');
+    tog.className = 'tog' + (hasKids ? ' open' : '');
+    tog.innerHTML = hasKids ? '▾' : '·';
+    row.appendChild(tog);
+
+    const tagSpan = document.createElement('span'); tagSpan.className = 'tn-bracket'; tagSpan.textContent = '<';
+    const tagName = document.createElement('span'); tagName.className = 'tn-tag'; tagName.textContent = node.tag;
+    row.append(tagSpan, tagName);
+
+    for (const [k, v] of Object.entries(node.attrs)) {
+      if (k === 'id') {
+        const a = document.createElement('span'); a.className = 'tn-id';
+        a.textContent = ` id="${v}"`; row.appendChild(a);
+      } else if (k === 'class') {
+        const a = document.createElement('span'); a.className = 'tn-class';
+        a.textContent = ` class="${v}"`; row.appendChild(a);
+      } else {
+        const a = document.createElement('span'); a.className = 'tn-attr';
+        a.textContent = ` ${k}` + (v ? `="${v}"` : ''); row.appendChild(a);
+      }
+    }
+
+    const close = document.createElement('span'); close.className = 'tn-bracket';
+    close.textContent = hasKids ? '>' : ' />';
+    row.appendChild(close);
+
+    const depthLabel = document.createElement('span'); depthLabel.className = 'tn-depth';
+    depthLabel.textContent = `d${node.depth}`;
+    row.appendChild(depthLabel);
+
+    wrap.appendChild(row);
+
+    if (hasKids) {
+      const kids = document.createElement('div');
+      kids.className = 'children';
+      for (const ch of node.children) kids.appendChild(renderNode(ch));
+      wrap.appendChild(kids);
+
+      const toggle = () => {
+        const collapsed = kids.style.display === 'none';
+        kids.style.display = collapsed ? '' : 'none';
+        tog.innerHTML = collapsed ? '▾' : '▸';
+        tog.className = 'tog ' + (collapsed ? 'open' : 'closed');
+      };
+      row.addEventListener('click', toggle);
+    }
+
+    return wrap;
+  }
+
+  // ─── SEARCH (BFS over DOM + Hash Table for id) ───────────────
+  function doSearch() {
+    const q = document.getElementById('search-input').value.trim();
+    allRows.forEach(r => r.classList.remove('hl'));
+    const badge = document.getElementById('search-badge');
+
+    if (!q) { badge.textContent = 'ready'; badge.className = ''; return; }
+
+    const idMatch = q.match(/id\s*=\s*["']?([\w-]+)["']?/);
+    const classMatch = q.match(/class\s*=\s*["']?([\w-]+)["']?/);
+
+    let found = 0;
+    let firstHit = null;
+
+    // O(1) id lookup via hash table
+    if (idMatch) {
+      const node = idIndex[idMatch[1]];
+      if (node) {
+        // find corresponding row by data-id
+        const row = allRows.find(r => r.dataset.id === idMatch[1]);
+        if (row) { row.classList.add('hl'); found++; firstHit = row; }
+      }
+    } else {
+      // BFS-style scan over rendered rows
+      for (const row of allRows) {
+        let hit = false;
+        if (classMatch) {
+          const cls = row.dataset.class.split(/\s+/);
+          if (cls.includes(classMatch[1])) hit = true;
+        } else {
+          // plain text: match tag, id, class
+          if (row.dataset.tag.includes(q) || row.dataset.id.includes(q) || row.dataset.class.includes(q)) hit = true;
+        }
+        if (hit) {
+          row.classList.add('hl');
+          if (!firstHit) firstHit = row;
+          found++;
+        }
+      }
+    }
+
+    badge.textContent = found ? `${found} match${found > 1 ? 'es' : ''}` : 'no match';
+    badge.className = found ? 'found' : 'not-found';
+
+    // expand parents and scroll to first hit
+    if (firstHit) {
+      let p = firstHit.parentElement;
+      while (p && p.id !== 'tree-scroll') {
+        if (p.classList.contains('children')) p.style.display = '';
+        p = p.parentElement;
+      }
+      firstHit.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  // ─── PARSE & RENDER ──────────────────────────────────────────
+  function run() {
+    const html = document.getElementById('html-input').value;
+    const tokens = tokenize(html);
+    const tree = buildTree(tokens);
+    const scroll = document.getElementById('tree-scroll');
+    scroll.innerHTML = '';
+
+    if (tree.children.length === 0) {
+      scroll.innerHTML = '<div id="empty"><div class="empty-label">no valid tags found</div></div>';
+      return;
+    }
+
+    const frag = renderTree(tree);
+    scroll.appendChild(frag);
+
+    document.getElementById('stat-nodes').textContent = nodeCount;
+    document.getElementById('stat-depth').textContent = maxDepth;
+    document.getElementById('stat-ids').textContent = Object.keys(idIndex).length;
+    document.getElementById('status-msg').textContent = `parsed ${nodeCount} nodes in ${maxDepth} levels`;
+
+    doSearch();
+  }
+
+  // ─── EXPAND / COLLAPSE ALL ───────────────────────────────────
+  document.getElementById('expand-all').addEventListener('click', () => {
+    document.querySelectorAll('.children').forEach(el => el.style.display = '');
+    document.querySelectorAll('.tog').forEach(t => { t.innerHTML = '▾'; t.className = 'tog open'; });
+  });
+  document.getElementById('collapse-all').addEventListener('click', () => {
+    document.querySelectorAll('.children').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tog').forEach(t => { t.innerHTML = '▸'; t.className = 'tog closed'; });
+  });
+
+  // ─── EVENTS ──────────────────────────────────────────────────
+  document.getElementById('parse-btn').addEventListener('click', run);
+  document.getElementById('search-input').addEventListener('input', doSearch);
+  document.getElementById('html-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); run(); }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const ta = e.target;
+      const s = ta.selectionStart;
+      ta.value = ta.value.slice(0, s) + '  ' + ta.value.slice(ta.selectionEnd);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+    }
+  });
+
+  run();
+})();
+</script>
+</body>
+</html>
