@@ -1,6 +1,12 @@
 namespace DomParserAPI.Models;
 
-public enum TokenType { OpenTag, CloseTag, Text }
+public enum TokenType
+{
+    OpenTag,
+    CloseTag,
+    SelfClosingTag,
+    Text
+}
 
 public class Token
 {
