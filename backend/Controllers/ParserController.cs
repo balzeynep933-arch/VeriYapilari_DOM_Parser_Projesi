@@ -9,10 +9,13 @@ namespace DomParserAPI.Controllers;
 public class ParserController : ControllerBase
 {
     private readonly HtmlTokenizer _tokenizer;
+    private readonly DomTreeBuilder _treeBuilder; // YENİ
 
-    public ParserController(HtmlTokenizer tokenizer)
+    // Constructor güncellendi
+    public ParserController(HtmlTokenizer tokenizer, DomTreeBuilder treeBuilder)
     {
         _tokenizer = tokenizer;
+        _treeBuilder = treeBuilder;
     }
 
     [HttpPost("tokenize")]
@@ -23,5 +26,21 @@ public class ParserController : ControllerBase
 
         var result = _tokenizer.Tokenize(htmlInput);
         return Ok(result);
+    }
+
+    // YENİ ENDPOINT: Ağacı döndürür
+    [HttpPost("build-tree")]
+    public ActionResult<DomNode> BuildTree([FromBody] string htmlInput)
+    {
+        if (string.IsNullOrEmpty(htmlInput)) 
+            return BadRequest("Input cannot be empty.");
+
+        // 1. Önce token'lara ayır (1. Kişinin görevi)
+        var tokens = _tokenizer.Tokenize(htmlInput);
+        
+        // 2. Token'lardan ağaç inşa et (2. Kişinin görevi)
+        var tree = _treeBuilder.BuildTree(tokens);
+        
+        return Ok(tree);
     }
 }
