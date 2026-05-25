@@ -8,6 +8,8 @@ builder.Services.AddSwaggerGen();
 
 // HtmlTokenizer sınıfını sisteme dahil ediyoruz
 builder.Services.AddScoped<HtmlTokenizer>();
+builder.Services.AddScoped<DomTreeBuilder>();
+
 
 builder.Services.AddCors(options =>
 {
