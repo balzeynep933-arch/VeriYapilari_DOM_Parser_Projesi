@@ -1,6 +1,5 @@
-namespace VeriYapilariProje
+namespace DomParserAPI.Logic
 {
-    // Hocanın "from scratch" (sıfırdan) istediği kuyruk yapısı
     public class MyQueue<T>
     {
         private class Node
@@ -13,7 +12,6 @@ namespace VeriYapilariProje
         private Node head, tail;
         public int Count { get; private set; }
 
-        // Kuyruğun sonuna eleman ekleme
         public void Enqueue(T item)
         {
             Node newNode = new Node(item);
@@ -23,7 +21,6 @@ namespace VeriYapilariProje
             Count++;
         }
 
-        // Kuyruğun başından eleman çıkarma
         public T Dequeue()
         {
             if (head == null) throw new System.InvalidOperationException("Kuyruk boş!");
