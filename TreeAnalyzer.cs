@@ -1,70 +1,116 @@
 using System;
 using System.Collections.Generic;
+using DomParserAPI.Models; // Arkadaşlarının DomNode yapısını görmesi için
 
-namespace VeriYapilariProje
+namespace DomParserAPI.Logic
 {
     public class TreeAnalyzer
     {
-        // 1. BFS - Genişlik Öncelikli Arama (Level-order Traversal)
-        public void BFS(HtmlNode root)
+        // 1. BFS (Breadth-First Search) - Genişlik Öncelikli Seviye Taraması
+        public List<DomNode> BFS(DomNode root)
         {
-            if (root == null) return;
+            List<DomNode> resultList = new List<DomNode>();
+            if (root == null) return resultList;
             
-            MyQueue<HtmlNode> queue = new MyQueue<HtmlNode>();
+            MyQueue<DomNode> queue = new MyQueue<DomNode>();
             queue.Enqueue(root);
 
             while (queue.Count > 0)
             {
-                HtmlNode current = queue.Dequeue();
-                
-                // İşlem: Düğüm bilgilerini ekrana yazdır (veya bir listede topla)
-                Console.WriteLine($"Etiket: {current.TagName} | ID: {current.Id}");
+                DomNode current = queue.Dequeue();
+                resultList.Add(current);
 
-                foreach (var child in current.Children)
+                if (current.Children != null)
                 {
-                    queue.Enqueue(child);
+                    foreach (var child in current.Children)
+                    {
+                        if (child != null) queue.Enqueue(child);
+                    }
+                }
+            }
+            return resultList;
+        }
+
+        // 2. DFS (Depth-First Search) - Derinlik Öncelikli Rekürsif Tarama
+        public List<DomNode> DFS(DomNode root)
+        {
+            List<DomNode> resultList = new List<DomNode>();
+            DFSHelper(root, resultList);
+            return resultList;
+        }
+
+        private void DFSHelper(DomNode node, List<DomNode> list)
+        {
+            if (node == null) return;
+            
+            list.Add(node);
+            
+            if (node.Children != null)
+            {
+                foreach (var child in node.Children)
+                {
+                    if (child != null) DFSHelper(child, list);
                 }
             }
         }
 
-        // 2. DFS - Derinlik Öncelikli Arama (Recursive)
-        public void DFS(HtmlNode node)
+        // 3. Ek Fonksiyon: Ağaç Derinliği Hesaplama (Tree Depth)
+        public int CalculateDepth(DomNode node)
         {
-            if (node == null) return;
+            if (node == null) return 0;
+            if (node.Children == null || node.Children.Count == 0) return 1;
 
-            Console.WriteLine($"Etiket: {node.TagName}");
-
+            int maxChildDepth = 0;
             foreach (var child in node.Children)
             {
-                DFS(child);
+                if (child != null)
+                {
+                    int currentDepth = CalculateDepth(child);
+                    if (currentDepth > maxChildDepth)
+                    {
+                        maxChildDepth = currentDepth;
+                    }
+                }
             }
+            return 1 + maxChildDepth;
         }
 
-        // 3. Ağaç Derinliği Hesaplama (Rekürsif)
-        public int GetTreeDepth(HtmlNode node)
+        // 4. Ek Fonksiyon: Kardeş Düğümleri Bulma (Get Siblings)
+        public List<DomNode> GetSiblings(DomNode node)
         {
-            if (node == null || node.Children.Count == 0) return 0;
+            List<DomNode> realSiblings = new List<DomNode>();
+            if (node == null || node.Parent == null) return realSiblings;
 
-            int maxDepth = 0;
-            foreach (var child in node.Children)
+            if (node.Parent.Children != null)
             {
-                int currentDepth = GetTreeDepth(child);
-                if (currentDepth > maxDepth) maxDepth = currentDepth;
+                foreach (var child in node.Parent.Children)
+                {
+                    if (child != null && child != node)
+                    {
+                        realSiblings.Add(child);
+                    }
+                }
             }
-            return 1 + maxDepth;
+            return realSiblings;
         }
 
-        // 4. Kardeş Düğümleri Bulma
-        public List<HtmlNode> GetSiblings(HtmlNode node)
+        // 5. Ek Fonksiyon: Alt Ağaç Analizi (Subtree Analysis)
+        public int AnalyzeSubtreeCount(DomNode subRoot)
         {
-            List<HtmlNode> siblings = new List<HtmlNode>();
-            if (node == null || node.Parent == null) return siblings;
-
-            foreach (var child in node.Parent.Children)
+            if (subRoot == null) return 0;
+            
+            int totalNodes = 1; // Kendisini sayıyoruz
+            if (subRoot.Children != null)
             {
-                if (child != node) siblings.Add(child);
+                foreach (var child in subRoot.Children)
+                {
+                    if (child != null)
+                    {
+                        totalNodes += AnalyzeSubtreeCount(child);
+                    }
+                }
             }
-            return siblings;
+            return totalNodes;
         }
     }
 }
