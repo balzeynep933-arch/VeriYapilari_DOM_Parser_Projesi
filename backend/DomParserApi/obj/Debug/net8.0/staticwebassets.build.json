@@ -1,0 +1,39 @@
+{
+  "Version": 1,
+  "Hash": "lhHpgp628wPvWPpYC2hXCNu49uouMFPFyi0sSm6ycFk=",
+  "Source": "DomParserApi",
+  "BasePath": "_content/DomParserApi",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "DomParserApi/wwwroot",
+      "Source": "DomParserApi",
+      "ContentRoot": "/Users/rakhimzhanabdrassulov/VeriYapilari_DOM_Parser_Projesi/backend/DomParserApi/wwwroot/",
+      "BasePath": "_content/DomParserApi",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "/Users/rakhimzhanabdrassulov/VeriYapilari_DOM_Parser_Projesi/backend/DomParserApi/wwwroot/032390143_dom-front.html",
+      "SourceId": "DomParserApi",
+      "SourceType": "Discovered",
+      "ContentRoot": "/Users/rakhimzhanabdrassulov/VeriYapilari_DOM_Parser_Projesi/backend/DomParserApi/wwwroot/",
+      "BasePath": "_content/DomParserApi",
+      "RelativePath": "032390143_dom-front.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot/032390143_dom-front.html"
+    }
+  ]
+}

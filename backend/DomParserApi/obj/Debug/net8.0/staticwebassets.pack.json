@@ -1,0 +1,25 @@
+{
+  "Files": [
+    {
+      "Id": "/Users/rakhimzhanabdrassulov/VeriYapilari_DOM_Parser_Projesi/backend/DomParserApi/wwwroot/032390143_dom-front.html",
+      "PackagePath": "staticwebassets/032390143_dom-front.html"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.DomParserApi.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.build.DomParserApi.props",
+      "PackagePath": "build\\DomParserApi.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.DomParserApi.props",
+      "PackagePath": "buildMultiTargeting\\DomParserApi.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.DomParserApi.props",
+      "PackagePath": "buildTransitive\\DomParserApi.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
