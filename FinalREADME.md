@@ -1,27 +1,28 @@
-# DOM Tree Visualizer Project
+DOM Ağacı Görselleştirici Projesi (DOM Tree Visualizer)
+Bu proje, özel bir C# arka ucu (backend) kullanarak HTML kodlarını ayrıştıran ve elde edilen yapıyı ön yüzde (frontend) bir N-ary ağacı olarak görselleştiren web tabanlı bir DOM Ağacı Görselleştiricidir.
 
-This project is a web-based DOM Tree Visualizer that parses HTML using a custom C# backend and visualizes the structure as an N-ary tree on the frontend.
+Proje Yapısı
+backend/DomParserApi: Özel veri yapıları (Yığın/Stack, Kuyruk/Queue, Karma Tablo/HashTable) ve Regex tabanlı bir HTML ayrıştırıcı içeren ASP.NET Core Web API projesi.
 
-## Project Structure
-- `backend/DomParserApi`: ASP.NET Core Web API with custom data structures (Stack, Queue, HashTable) and a Regex-based HTML parser.
-- `wwwroot`: Modern UI for visualizing the DOM tree.
+wwwroot: DOM ağacını görselleştirmek için geliştirilmiş modern kullanıcı arayüzü (UI).
 
-## How to Run
+Nasıl Çalıştırılır?
+Gereksinimler: Bilgisayarınızda .NET SDK'nın kurulu olduğundan emin olun.
 
-1. **Prerequisites**: Ensure you have the .NET SDK installed.
-2. **Navigate to Backend**:
-   ```bash
-   cd backend/DomParserApi
-   ```
-3. **Run the Application**:
-   ```bash
-   dotnet run --launch-profile http
-   ```
-4. **Access the App**:
-   Open your browser and go to [http://localhost:5175](http://localhost:5175)
+Arka Uç Dizinine Gidin:
+cd backend/DomParserApi
 
-## Features
-- **N-ary Tree Visualization**: Correctly displays parent-child relationships.
-- **Text Node Parsing**: Now captures and displays text content between tags.
-- **Attribute Support**: Correctly handles multiple classes and IDs using Regex.
-- **Search**: BFS-based search for tags, classes, and IDs.
+Uygulamayı Çalıştırın:
+dotnet run --launch-profile http
+
+Uygulamaya Erişin:
+Tarayıcınızı açın ve şu adrese gidin: http://localhost:5175
+
+Özellikler
+N-ary Ağaç Görselleştirme: Ebeveyn-çocuk (parent-child) ilişkilerini doğru bir şekilde görüntüler.
+
+Metin Düğümü (Text Node) Ayrıştırma: Etiketlerin arasında kalan metin içeriklerini yakalar ve başarıyla listeler.
+
+Öznitelik (Attribute) Desteği: Regex kullanarak birden fazla sınıfı (class) ve kimliği (ID) hatasız bir şekilde işler.
+
+Arama Fonksiyonu: Etiketler, sınıflar ve kimlikler için BFS (Genişlik Öncelikli Arama) tabanlı arama desteği sunar.

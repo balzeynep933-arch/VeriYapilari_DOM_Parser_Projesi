@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  dom-parser:
+    container_name: dom_parser_app
+    build:
+      context: ./backend/DomParserApi
+      dockerfile: Dockerfile
+    ports:
+      - "5175:5175"
+    restart: always
