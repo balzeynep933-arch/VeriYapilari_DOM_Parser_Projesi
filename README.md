@@ -1,40 +1,153 @@
-# VeriYapilari_DOM_Parser_Projesi
-1) 032490002 — Tokenizer & Lexical Analysis (Backend Foundation)
+# DOM Ağacı Görselleştirici
 
-Bu projenin temel veri akışını başlatan ve ham HTML metnini yapılandırılmış bir token dizisine dönüştüren Lexical Analysis (Sözcük Analizi) süreci tarafımdan üstlenilmiştir. Projenin en kritik aşaması olan bu katman, karmaşık string verilerini diğer modüllerin (Tree Builder, Hash Table) işleyebileceği anlamlı birimlere ayırmaktadır.
-Öznitelik Ayıklama (Attribute Parsing): Etiket içerisindeki id ve class gibi nitelikleri yakalamak için optimize edilmiş Regex (Düzenli İfadeler) yapıları kullanılmış; bu veriler 3. kişinin (Hash Table) doğrudan erişebilmesi için Dictionary<string, string> yapısında saklanmıştır.  
-Veri Modelleri: Projenin iskeletini oluşturan Token sınıfı ve TokenType enum yapıları kurgulanarak, tüm backend mimarisinin üzerinde yükseleceği veri kontratları tanımlanmıştır.  
-Web API Entegrasyonu: Frontend ile Backend arasındaki iletişimi sağlamak amacıyla ASP.NET Core Web API üzerinde bir endpoint (/api/parser/tokenize) oluşturulmuş ve CORS politikaları yapılandırılarak sistemin tam entegre çalışması sağlanmıştır.
-2)032490001_ HTML to DOM Tree Parser
-Bu proje, C# (.NET Core) üzerinde hazır standart kütüphaneler kesinlikle kullanılmadan sıfırdan geliştirilen N-ary Tree, Stack, Queue ve Hash Table gibi özel veri yapılarıyla ham HTML metnini bellekte hiyerarşik bir DOM ağacına dönüştürmeyi amaçlamaktadır. Düzenli ifadeler yerine temel string manipülasyonu ile etiketleri ayrıştıran sistem, yığıt tabanlı O(N) zaman karmaşıklığına sahip bir algoritma sayesinde açılış ve kapanış etiketlerini doğru ebeveyn-çocuk ilişkileriyle eşleştirerek modeli inşa eder. Nesne yönelimli programlama prensipleriyle tasarlanan bu mimari; doğrudan ana dala kod gönderiminin engellendiği, Pull Request (PR) mekanizmasının zorunlu tutulduğu profesyonel bir Git iş akışıyla yönetilmekte ve kod içi isimlendirmelerde Türkçe karakter kullanılmaması kuralına katı bir şekilde bağlı kalmaktadır.
-3)032390103_ hashtable
-Bu projenin temelini, HTML metnini ayrıştırarak hiyerarşik bir düzende saklayan N-ary Tree (Çoklu Ağaç) yapısı ve bu yapı üzerindeki arama işlemlerini optimize eden Hash Table (Karma Tablo) veri yapısı oluşturmaktadır. Implemente edilen HashTable sınıfı, DOM elemanlarına id niteliği üzerinden O(1) zaman karmaşıklığıyla (ortalama durumda) erişim sağlayarak getElementById fonksiyonunun performansını en üst düzeye çıkarırken, olası çakışmaları Chaining (Bağlı Liste) yöntemiyle yönetmektedir. HTML ayrıştırma (parsing) sürecinde etiketlerin iç içe geçme sırasını ve derinliğini kontrol etmek için bir Stack (Yığın) yapısından yararlanılırken; sınıf bazlı aramalar ve ağaç üzerindeki seviye bazlı taramalar için Queue (Kuyruk) destekli BFS (Genişlik Öncelikli Arama) algoritması kullanılmaktadır. Bu mimari, hem bellek yönetimini hiyerarşik bir düzende tutmakta hem de veri setleri büyüdüğünde bile belirli elemanlara hızlı erişim ve analiz imkanı sunarak projenin teknik gereksinimlerini karşılamaktadır.
-4)032390146 numaralı öğrenci Nihad Gasimzade olarak projedeki sorumluluğum olan ağaç yapısı üzerinde gezinme algoritmalarının (BFS/DFS) geliştirilmesi, yardımcı veri yapılarının (Queue) implementasyonu ve ağaç analiz fonksiyonlarının oluşturulması süreçlerini tamamlamış bulunmaktayım. Bu kapsamda, BFS algoritmasının çalışabilmesi için gerekli olan kuyruk yapısı standart kütüphanelerden bağımsız olarak bağlı liste mantığıyla sıfırdan kodlanmış; ağaç hiyerarşisini seviye bazlı ve rekürsif olarak tarayan BFS ve DFS algoritmaları ile birlikte ağaç derinliği hesaplama ve kardeş düğüm bulma fonksiyonları sisteme entegre edilmiştir. Geliştirilen bu özellikler hocanın rehberinde belirttiği profesyonel iş akışına uygun olarak "nihad/tree-traversal" dalı üzerinden master dalına aktarılmak üzere aktif bir Pull Request (PR) haline getirilmiş ve 30.03.2026 tarihi itibarıyla ara rapor aşaması için gerekli tüm teknik gereksinimler GitHub reposu üzerinde ekip içi tartışmaya ve incelemeye hazır şekilde sunulmuştur.
-5)032390143_Front
-DOM Ağacı Görselleştirici (DOM Tree Visualizer)
-Bu proje, HTML kaynak kodunu analiz eden ve bu kodu etkileşimli, hiyerarşik bir ağaç yapısına (N-ary Tree) dönüştüren modern bir web aracıdır. "Cyberpunk" temalı karanlık bir arayüze ve yüksek performanslı algoritmalara sahiptir.
-Öne Çıkan Özellikler
-1)Anlık Analiz: HTML metnini milisaniyeler içinde işler ve görsel bir ağaç oluşturur.
-2)Gelişmiş Arama:
--Etiket (tag), sınıf (class) ve ID bazlı arama yapabilir.
--ID aramalarında Hash Table yapısını kullanarak O(1) karmaşıklığında hızlı erişim sağlar.
--Bulunan sonuçların ebeveyn düğümlerini otomatik olarak genişletir.
-3)Etkileşimli Arayüz:
--Düğümleri tek tek veya toplu olarak daraltıp genişletme özelliği.
--Derinlik göstergeleri (Depth Indicators) ile görsel hiyerarşi takibi.
--Dinamik animasyonlar ve derinlik bazlı renklendirme.
-4)Kod Düzenleyici: Tab desteği ve Ctrl + Enter kısa yolu ile hızlı analiz imkanı.
-Teknik Altyapı ve Algoritmalar
-Proje, veri yapıları ve algoritmaların web üzerindeki pratik bir uygulamasıdır:
-1)Tokenizasyon (Lexical Analysis): HTML dizisini etiketler ve metinler olarak parçalara ayırır. Kendi kendini kapatan etiketleri (void elements) tanır.
-2)Yığın Tabanlı Ayrıştırma (Stack-based Parsing): Ağaç yapısını oluşturmak için Stack (Yığın) veri yapısı kullanılır. Bu sayede iç içe geçmiş (nested) etiketler hatasız bir şekilde hiyerarşiye aktarılır.
-3)Hash Map İndeksleme: ID'ye göre yapılan aramaları optimize etmek için bir indeks tablosu tutulur.
-4)Ağaç Gezinimi (Tree Traversal): Görselleştirme ve arama işlemleri için N-ary ağaç üzerinde BFS (Genişlik Öncelikli Arama) ve rekürsif yöntemler kullanılır.
-Tasarım
-1)Tema: Catppuccin Mocha tabanlı, göz yormayan karanlık mod.
-2)Fontlar: Kodlar için JetBrains Mono, başlıklar için Syne.
-3)Efektler: Retro terminal hissi veren tarama çizgileri (scanlines) ve yumuşak geçiş efektleri.
-Kullanım Notları
-1)Ctrl + Enter: HTML kodunu ayrıştırır.
-2)Tab: Kod alanında girinti oluşturur.
-3)Düğümlere tıklayarak alt dalları gizleyebilir veya açabilirsiniz.
+HTML kodunu ayrıştırarak tarayıcı benzeri bir DOM ağacı oluşturan ve bunu etkileşimli bir arayüzde görselleştiren web tabanlı bir araç. Tüm temel veri yapıları (yığıt, kuyruk, karma tablo) standart kütüphanelerden bağımsız olarak sıfırdan yazılmıştır.
+
+## İçindekiler
+
+- [Proje Hakkında](#proje-hakkında)
+- [Özellikler](#özellikler)
+- [Sistem Mimarisi](#sistem-mimarisi)
+- [Veri Yapıları ve Algoritmalar](#veri-yapıları-ve-algoritmalar)
+- [Kurulum ve Çalıştırma](#kurulum-ve-çalıştırma)
+- [Takım ve Görev Dağılımı](#takım-ve-görev-dağılımı)
+
+---
+
+## Proje Hakkında
+
+Bu proje, Veri Yapıları ve Algoritmalar dersi kapsamında geliştirilmiştir. Ham HTML metni; tokenizasyon, yığıt tabanlı ağaç inşası ve hash tablosu ile indeksleme aşamalarından geçirilerek görselleştirilebilir bir DOM ağacına dönüştürülmektedir.
+
+**Arka uç:** ASP.NET Core 8.0 — RESTful API  
+**Ön yüz:** Saf HTML / CSS / JavaScript — collapsible N-ary ağaç görünümü  
+**İletişim:** HTTP/JSON, CORS tüm origin'lere açık
+
+---
+
+## Özellikler
+
+- **N-ary Ağaç Görselleştirme** — ebeveyn-çocuk ilişkilerini doğru biçimde gösterir
+- **Metin Düğümü Ayrıştırma** — etiketler arası metin içeriklerini yakalar
+- **Öznitelik Desteği** — Regex ile birden fazla `class` ve `id` hatasız işlenir
+- **Çift Modlu Arama** — `id` için O(1) hash tablosu, `tag/class` için BFS
+- **Docker Desteği** — proje tamamen konteynerize edilmiştir
+
+---
+
+## Sistem Mimarisi
+
+```
+Kullanıcı (HTML girdisi)
+        │
+        ▼
+POST /api/parse
+        │
+        ├─► HtmlTokenizer      →  Token listesi          O(N)
+        ├─► DomTreeBuilder     →  N-ary Tree (Stack)     O(N)
+        ├─► DomIndexer         →  Hash Table (DFS)       O(N)
+        │
+        ▼
+  JSON yanıtı
+        │
+        ▼
+  Frontend render (collapsible ağaç)
+        │
+        ▼
+  Arama: id → Hash Map O(1)  |  tag/class → BFS O(N)
+```
+
+### Modül ve Dosya Yapısı
+
+| Dosya | Sorumlu | Açıklama |
+|---|---|---|
+| `Logic/HtmlTokenizer.cs` | Mehmet Fatih Erduran | Lexical analysis, token üretimi, void element tespiti |
+| `Models/Token.cs` | Mehmet Fatih Erduran | Token sınıfı ve TokenType enum |
+| `Controllers/ParserController.cs` | Mehmet Fatih Erduran | REST endpoint, DI container entegrasyonu |
+| `Logic/DomTreeBuilder.cs` | Kerem Bilgiç | Stack tabanlı N-ary Tree inşası |
+| `Logic/CustomStack.cs` | Kerem Bilgiç | Generic Stack\<T\> (from scratch) |
+| `Models/DomNode.cs` | Kerem Bilgiç | Ağaç düğümü — Children, Parent, Attributes |
+| `DomParserApi/HtmlParser.cs` | Kerem Bilgiç | Alternatif parser — string manipülasyonu |
+| `DomParserApi/HtmlNode.cs` | Kerem Bilgiç | Dinamik dizi tabanlı HtmlNode modeli |
+| `Logic/CustomHashTable.cs` | Zeynep Bal | Chaining Hash Table, Horner hash fonksiyonu |
+| `Logic/DomIndexer.cs` | Zeynep Bal | DFS ile id/class indeksleme servisi |
+| `DomParserApi/CustomQueue.cs` | Nihad Gasimzade | Bağlı liste tabanlı Queue (from scratch) |
+| `wwwroot/032390143_dom-front.html` | Rakhimzhan Abdrassulov | Cyberpunk temalı frontend, BFS arama |
+| `DomParserApi/Dockerfile` | Rakhimzhan Abdrassulov | Multi-stage .NET 8 build imajı |
+| `docker-compose.yml` | Rakhimzhan Abdrassulov | Servis tanımı, port 5175 yönlendirmesi |
+
+---
+
+## Veri Yapıları ve Algoritmalar
+
+### Stack (Yığıt) — `CustomStack<T>`
+
+HTML ayrıştırması sırasında açılış/kapanış etiketlerinin sırasını takip etmek için kullanılır. `List<T>` üzerine inşa edilmiş olup tüm temel işlemler O(1) karmaşıklığındadır. Hatalı HTML'de bile kısmi ağaç oluşturulabilmesini sağlar.
+
+### Hash Table (Karma Tablo) — `CustomHashTable`
+
+`getElementById` ve class bazlı aramaları O(1) ortalama karmaşıklıkta gerçekleştirmek için Separate Chaining yöntemiyle yazılmıştır.
+
+- Başlangıç kapasitesi: 16 kova; yük faktörü %75'i geçince `Resize()` tetiklenir
+- Hash fonksiyonu: Polynomial Rolling Hash — `hash = hash * 31 + c`
+- `_idTable` ve `_classTable` olmak üzere iki bağımsız tablo tutulur
+
+### Queue (Kuyruk) — `CustomQueue`
+
+BFS algoritmasının doğrudan bağımlısıdır. Çift yönlü bağlı liste mantığıyla yazılmış olup `_head` ve `_tail` referansları O(1) ekleme/çıkarma sağlar. Bellek dinamik olarak büyür.
+
+### Karmaşıklık Özeti
+
+| İşlem | Ortalama | En Kötü | Uzay |
+|---|---|---|---|
+| HtmlTokenizer.Tokenize() | O(N) | O(N) | O(T) |
+| Stack.Push / Pop / Peek | O(1) | O(1) | O(D) |
+| DOM Ağacı İnşası | O(N) | O(N) | O(D) |
+| HtmlNode.AddChild (amortize) | O(1) | O(N) resize | — |
+| HashTable.Put / Get | O(1) | O(K) | O(N) |
+| BFS / DFS Gezinme | O(N) | O(N) | O(W) / O(D) |
+
+> N: token/düğüm sayısı · D: ağaç derinliği · W: ağaç genişliği · K: hash zinciri uzunluğu · T: token listesi boyutu
+
+---
+
+## Kurulum ve Çalıştırma
+
+### Seçenek 1: Docker (Önerilen)
+
+Docker ve Docker Compose kuruluysa proje kök dizininde şu komutu çalıştırın:
+
+```bash
+docker-compose up --build
+```
+
+### Seçenek 2: Yerel .NET SDK
+
+1. .NET SDK 8.0 kurulu olduğundan emin olun.
+2. Arka uç dizinine gidin:
+   ```bash
+   cd backend/DomParserApi
+   ```
+3. Uygulamayı başlatın:
+   ```bash
+   dotnet run --launch-profile http
+   ```
+
+### Uygulamaya Erişim
+
+Her iki yöntemde de uygulama başladıktan sonra tarayıcıdan şu adrese gidin:
+
+```
+http://localhost:5175
+```
+
+---
+
+## Takım ve Görev Dağılımı
+
+| Ad Soyad | Öğrenci No | Üstlenilen Görev |
+|---|---|---|
+| **Mehmet Fatih Erduran** | 032490002 | `HtmlTokenizer` modülü — tek geçişli lexical analysis, token/attribute parsing (Regex), ASP.NET Core endpoint'leri ve CORS yapılandırması |
+| **Kerem Bilgiç** | 032490001 | DOM ağacı inşası — `DomTreeBuilder`, `HtmlParser`, `CustomStack<T>`, `DomNode` ve `HtmlNode` modelleri (dinamik dizi genişletme dahil), Stack tabanlı ayrıştırma algoritması |
+| **Zeynep Bal** | 032390103 | Hash Table implementasyonu — Polynomial Rolling Hash (Horner metodu), Separate Chaining ile çakışma çözümü, `DomIndexer` servisi (DFS ile id/class indeksleme), Load Factor yönetimi ve Resize mekanizması |
+| **Nihad Gasimzade** | 032390146 | Ağaç gezinme algoritmaları — bağlı liste tabanlı `CustomQueue`, BFS (level-order traversal), DFS (rekürsif preorder), ağaç derinliği hesaplama ve kardeş düğüm bulma fonksiyonları |
+| **Rakhimzhan Abdrassulov** | 032390143 | Frontend arayüzü — collapsible N-ary ağaç görselleştirmesi, çift modlu arama (hash + BFS), Cyberpunk/Catppuccin Mocha teması, JetBrains Mono/Syne fontları. Docker yapılandırması (Dockerfile, docker-compose.yml) |
+
