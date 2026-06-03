@@ -359,28 +359,25 @@
   function renderNode(node, depth) {
     if (!node) return null;
     
-    const nodeTag = node.tag || node.Tag || "";
-    const nodeId = node.id || node.Id || "";
-    const nodeClassName = node.className || node.ClassName || "";
-    const nodeChildren = node.children || node.Children || [];
+    const nTag = node.Tag || node.tag || '';
+    const nId = node.Id || node.id || '';
+    const nClass = node.ClassName || node.className || '';
+    const nIndex = node.Index !== undefined ? node.Index : node.index;
 
     nodeCount++;
     if (depth > maxDepth) maxDepth = depth;
-    if (nodeId) idIndex[nodeId] = node;
 
     // Handle text nodes if the backend provides them with #text
-    if (nodeTag === '#text') {
+    if (nTag === '#text') {
       const d = document.createElement('div');
-      d.className = 'text-leaf';
+      d.className = 'text-leaf nr'; // nr allows highlighting
       d.style.paddingLeft = (depth * 20 + 22) + 'px';
+      d.dataset.index = nIndex; // map to backend index
       const q1 = document.createElement('span'); q1.className = 'tl-quote'; q1.textContent = '"';
-      
-      const nodeText = node.text || node.Text || "";
-      const tx = document.createElement('span'); 
-      tx.textContent = nodeText.length > 100 ? nodeText.slice(0, 100) + '...' : nodeText;
-      
+      const tx = document.createElement('span'); tx.textContent = node.Text || node.text || '';
       const q2 = document.createElement('span'); q2.className = 'tl-quote'; q2.textContent = '"';
       d.append(q1, tx, q2);
+      allRows.push(d); // push to allRows
       return d;
     }
 
@@ -391,9 +388,10 @@
     const row = document.createElement('div');
     row.className = 'nr';
     row.style.paddingLeft = (depth * 20) + 'px';
-    row.dataset.id = nodeId;
-    row.dataset.class = nodeClassName;
-    row.dataset.tag = nodeTag;
+    row.dataset.id = nId;
+    row.dataset.class = nClass;
+    row.dataset.tag = nTag;
+    row.dataset.index = nIndex; // Map to backend index
     allRows.push(row);
 
     // depth bar
@@ -405,23 +403,23 @@
       row.appendChild(bar);
     }
 
-    const hasKids = nodeChildren && nodeChildren.length > 0;
+    const hasKids = node.Children ? node.Children.length > 0 : (node.children && node.children.length > 0);
     const tog = document.createElement('span');
     tog.className = 'tog' + (hasKids ? ' open' : '');
     tog.innerHTML = hasKids ? '▾' : '·';
     row.appendChild(tog);
 
     const tagSpan = document.createElement('span'); tagSpan.className = 'tn-bracket'; tagSpan.textContent = '<';
-    const tagName = document.createElement('span'); tagName.className = 'tn-tag'; tagName.textContent = nodeTag;
+    const tagName = document.createElement('span'); tagName.className = 'tn-tag'; tagName.textContent = nTag;
     row.append(tagSpan, tagName);
 
-    if (nodeId) {
+    if (nId) {
       const a = document.createElement('span'); a.className = 'tn-id';
-      a.textContent = ` id="${nodeId}"`; row.appendChild(a);
+      a.textContent = ` id="${nId}"`; row.appendChild(a);
     }
-    if (nodeClassName) {
+    if (nClass) {
       const a = document.createElement('span'); a.className = 'tn-class';
-      a.textContent = ` class="${nodeClassName}"`; row.appendChild(a);
+      a.textContent = ` class="${nClass}"`; row.appendChild(a);
     }
 
     const close = document.createElement('span'); close.className = 'tn-bracket';
@@ -437,15 +435,23 @@
     if (hasKids) {
       const kids = document.createElement('div');
       kids.className = 'children';
-      for (const ch of nodeChildren) {
+      const childrenArray = node.Children || node.children || [];
+      for (const ch of childrenArray) {
         const renderedCh = renderNode(ch, depth + 1);
         if (renderedCh) kids.appendChild(renderedCh);
       }
       wrap.appendChild(kids);
 
+      const closeRow = document.createElement('div');
+      closeRow.className = 'nr';
+      closeRow.style.paddingLeft = (depth * 20) + 'px';
+      closeRow.innerHTML = `<span style="width:18px;display:inline-flex;flex-shrink:0"></span><span class="tn-bracket">&lt;/</span><span class="tn-tag">${nTag}</span><span class="tn-bracket">&gt;</span>`;
+      wrap.appendChild(closeRow);
+
       const toggle = () => {
         const collapsed = kids.style.display === 'none';
         kids.style.display = collapsed ? '' : 'none';
+        closeRow.style.display = collapsed ? '' : 'none';
         tog.innerHTML = collapsed ? '▾' : '▸';
         tog.className = 'tog ' + (collapsed ? 'open' : 'closed');
       };
@@ -455,58 +461,58 @@
     return wrap;
   }
 
-  // ─── SEARCH (BFS over DOM + Hash Table for id) ───────────────
-  function doSearch() {
+  // ─── SEARCH (Via Backend API) ───────────────
+  async function doSearch() {
     const q = document.getElementById('search-input').value.trim();
     allRows.forEach(r => r.classList.remove('hl'));
     const badge = document.getElementById('search-badge');
 
     if (!q) { badge.textContent = 'ready'; badge.className = ''; return; }
 
-    const idMatch = q.match(/id\s*=\s*["']?([\w-]+)["']?/);
-    const classMatch = q.match(/class\s*=\s*["']?([\w-]+)["']?/);
+    badge.textContent = 'searching...';
+    
+    const html = document.getElementById('html-input').value;
 
-    let found = 0;
-    let firstHit = null;
+    try {
+      const response = await fetch('/api/parse/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: html, query: q })
+      });
 
-    // O(1) id lookup via hash table
-    if (idMatch) {
-      const node = idIndex[idMatch[1]];
-      if (node) {
-        // find corresponding row by data-id
-        const row = allRows.find(r => r.dataset.id === idMatch[1]);
-        if (row) { row.classList.add('hl'); found++; firstHit = row; }
-      }
-    } else {
-      // BFS-style scan over rendered rows
-      for (const row of allRows) {
-        let hit = false;
-        if (classMatch) {
-          const cls = (row.dataset.class || '').split(/\s+/);
-          if (cls.includes(classMatch[1])) hit = true;
-        } else {
-          // plain text: match tag, id, class
-          if ((row.dataset.tag || '').includes(q) || (row.dataset.id || '').includes(q) || (row.dataset.class || '').includes(q)) hit = true;
-        }
-        if (hit) {
+      if (!response.ok) throw new Error('Search failed');
+
+      const results = await response.json(); // Array of matched HtmlNodes
+      
+      let found = results.length;
+      let firstHit = null;
+
+      // Highlight matched nodes using Index
+      for (const node of results) {
+        const nIndex = node.Index !== undefined ? node.Index : node.index;
+        const row = allRows.find(r => parseInt(r.dataset.index) === nIndex);
+        if (row) {
           row.classList.add('hl');
           if (!firstHit) firstHit = row;
-          found++;
         }
       }
-    }
 
-    badge.textContent = found ? `${found} match${found > 1 ? 'es' : ''}` : 'no match';
-    badge.className = found ? 'found' : 'not-found';
+      badge.textContent = found ? `${found} match${found > 1 ? 'es' : ''}` : 'no match';
+      badge.className = found ? 'found' : 'not-found';
 
-    // expand parents and scroll to first hit
-    if (firstHit) {
-      let p = firstHit.parentElement;
-      while (p && p.id !== 'tree-scroll') {
-        if (p.classList.contains('children')) p.style.display = '';
-        p = p.parentElement;
+      // expand parents and scroll to first hit
+      if (firstHit) {
+        let p = firstHit.parentElement;
+        while (p && p.id !== 'tree-scroll') {
+          if (p.classList.contains('children')) p.style.display = '';
+          p = p.parentElement;
+        }
+        firstHit.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-      firstHit.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (error) {
+      console.error('Search error:', error);
+      badge.textContent = 'error';
+      badge.className = 'not-found';
     }
   }
 
@@ -535,14 +541,12 @@
 
       scroll.innerHTML = '';
 
-      // Normalize camelCase from JSON to PascalCase if necessary, 
-      // but let's just handle both or check what we got.
-      // Based on curl, it's camelCase: tag, id, className, children.
-      
-      const getChildren = (node) => node.children || node.Children || [];
-      const getTag = (node) => node.tag || node.Tag || '';
+      const isTreeValid = tree && (
+        (Array.isArray(tree) && tree.length > 0) ||
+        (!Array.isArray(tree) && (tree.Children || tree.children || tree.Tag || tree.tag))
+      );
 
-      if (!tree || (getChildren(tree).length === 0 && getTag(tree) === 'document')) {
+      if (!isTreeValid) {
         scroll.innerHTML = '<div id="empty"><div class="empty-label">no valid tags found</div></div>';
         document.getElementById('status-msg').textContent = 'ready';
         return;
@@ -554,19 +558,11 @@
       maxDepth = 0;
 
       const frag = document.createDocumentFragment();
+      const rootNodes = Array.isArray(tree) ? tree : ((tree.Tag === 'document' || tree.tag === 'document') ? (tree.Children || tree.children || []) : [tree]);
       
-      // If the root is 'document', we skip it and render its children
-      if (getTag(tree) === 'document') {
-        for (const ch of getChildren(tree)) {
-          const renderedNode = renderNode(ch, 0);
-          if (renderedNode) frag.appendChild(renderedNode);
-        }
-      } else {
-        const rootNodes = Array.isArray(tree) ? tree : [tree];
-        for (const rootNode of rootNodes) {
-          const renderedNode = renderNode(rootNode, 0);
-          if (renderedNode) frag.appendChild(renderedNode);
-        }
+      for (const rootNode of rootNodes) {
+        const renderedNode = renderNode(rootNode, 0);
+        if (renderedNode) frag.appendChild(renderedNode);
       }
       
       scroll.appendChild(frag);

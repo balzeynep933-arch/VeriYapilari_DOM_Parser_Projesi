@@ -7,13 +7,16 @@ namespace DomParserApi.Parser
 {
     public class HtmlParser
     {
+        private int _nodeIndex = 0;
+
         public HtmlNode ParseToTree(string htmlText)
         {
+            _nodeIndex = 0;
             if (string.IsNullOrWhiteSpace(htmlText)) return null;
 
             CustomStack stack = new CustomStack();
             // Create an invisible root node to hold the entire DOM
-            HtmlNode root = new HtmlNode("document"); 
+            HtmlNode root = new HtmlNode("document") { Index = _nodeIndex++ }; 
             stack.Push(root);
 
             int index = 0;
@@ -52,18 +55,45 @@ namespace DomParserApi.Parser
                 else // Opening Tag (e.g., <p class="text">)
                 {
                     HtmlNode newNode = ParseTagContent(tagContent);
+
+                    // Auto-close missing tags (li, td, th, tr)
+                    string tLow = newNode.Tag.ToLower();
+                    while (!stack.IsEmpty() && stack.Peek().Tag != "document")
+                    {
+                        string pTag = stack.Peek().Tag.ToLower();
+                        bool shouldPop = false;
+                        if (tLow == "li" && pTag == "li") shouldPop = true;
+                        else if ((tLow == "td" || tLow == "th") && (pTag == "td" || pTag == "th")) shouldPop = true;
+                        else if (tLow == "tr" && (pTag == "td" || pTag == "th" || pTag == "tr")) shouldPop = true;
+                        
+                        if (shouldPop) stack.Pop();
+                        else break;
+                    }
                     
                     HtmlNode parent = stack.Peek();
-                    if (parent != null)
-                    {
-                        parent.AddChild(newNode);
-                    }
+                    parent?.AddChild(newNode);
 
                     // Check if it's a self-closing tag
                     bool isSelfClosing = tagContent.EndsWith("/") || IsVoidElement(newNode.Tag);
                     if (!isSelfClosing)
                     {
                         stack.Push(newNode);
+
+                        // Skip internal content for script/style
+                        if (tLow == "script" || tLow == "style")
+                        {
+                            string closeTag = $"</{newNode.Tag}>";
+                            int scriptStartIndex = closeBracketIndex + 1;
+                            int closeTagIndex = htmlText.IndexOf(closeTag, scriptStartIndex, StringComparison.OrdinalIgnoreCase);
+                            if (closeTagIndex != -1)
+                            {
+                                string innerScript = htmlText.Substring(scriptStartIndex, closeTagIndex - scriptStartIndex);
+                                AddTextNode(stack, innerScript);
+                                stack.Pop();
+                                index = closeTagIndex + closeTag.Length;
+                                continue;
+                            }
+                        }
                     }
                 }
 
@@ -78,7 +108,7 @@ namespace DomParserApi.Parser
             text = text.Replace("\n", " ").Replace("\r", " ").Trim();
             if (!string.IsNullOrWhiteSpace(text))
             {
-                HtmlNode textNode = new HtmlNode("#text") { Text = text };
+                HtmlNode textNode = new HtmlNode("#text") { Text = text, Index = _nodeIndex++ };
                 stack.Peek()?.AddChild(textNode);
             }
         }
@@ -91,15 +121,15 @@ namespace DomParserApi.Parser
 
         private HtmlNode ParseTagContent(string content)
         {
-            // Extract tag name using Regex (first word)
-            var tagMatch = Regex.Match(content, @"^([a-zA-Z0-9]+)");
+            // Extract tag name using Regex (first word, allowing hyphens)
+            var tagMatch = Regex.Match(content, @"^([a-zA-Z0-9\-]+)");
             string tagName = tagMatch.Success ? tagMatch.Groups[1].Value : "unknown";
             
             // Extract id and class using Regex to support spaces in values
             string id = ExtractAttribute(content, "id");
             string className = ExtractAttribute(content, "class");
 
-            return new HtmlNode(tagName, id, className);
+            return new HtmlNode(tagName, id, className) { Index = _nodeIndex++ };
         }
 
         private string ExtractAttribute(string content, string attrName)

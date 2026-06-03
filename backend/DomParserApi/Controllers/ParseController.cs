@@ -15,4 +15,19 @@ public class ParseController : ControllerBase
         var root = parser.ParseToTree(html);
         return Ok(root);
     }
+
+    [HttpPost("search")]
+    public ActionResult<List<HtmlNode>> Search([FromBody] SearchRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.Html))
+            return BadRequest("Html content is missing.");
+
+        var parser = new HtmlParser();
+        var root = parser.ParseToTree(request.Html);
+        
+        var searcher = new DomSearcher(root);
+        var results = searcher.Search(request.Query);
+        
+        return Ok(results);
+    }
 }

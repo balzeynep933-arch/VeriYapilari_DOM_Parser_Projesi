@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DomParserApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9cc8facb8ee5f2fed24ac769c2e8389cbd688554")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fc2025319ed3c64704568ec55422697b45d092e1")]
 [assembly: System.Reflection.AssemblyProductAttribute("DomParserApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DomParserApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
