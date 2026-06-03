@@ -6,6 +6,7 @@ namespace DomParserApi.Models
         public string Id { get; set; }
         public string ClassName { get; set; }
         public string Text { get; set; }
+        public int Index { get; set; } // Added to map backend results to frontend UI
         [System.Text.Json.Serialization.JsonIgnore]
         public HtmlNode Parent { get; set; }
 
